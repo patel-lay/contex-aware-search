@@ -1,0 +1,3 @@
+Read data recursivley from local directory
+Parse the file into a temp list/ditionary(may need the source for citation)
+Index the list/dictionary and save it into a database, maybe redis or postgres. 
