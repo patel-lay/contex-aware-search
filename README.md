@@ -3,7 +3,7 @@ Still have errors, and doesn't compile
 
 ### System Diagram
 ```mermaid
-graph TD;
+graph LR;
     Data_Source --> |Indexing | IndexFlow;
     IndexFlow --> |Index Doc | IndexDoc;
     IndexFlow --> |Index Code | IndexCode;
@@ -11,7 +11,9 @@ graph TD;
     IndexDoc --> | Embed  | Redis;
     IndexCode --> | Embed | Redis;
     IndexExternal --> | Embed | Redis;
-
+```
+```mermaid
+graph LR;
     User(client) --> |REST API | APIServer;
     APIServer --> |Index question and get embedding KNN| Redis;
     APIServer --> | Result Doc | AgentDoc;
