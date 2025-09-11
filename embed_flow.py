@@ -7,13 +7,13 @@ from metaflow import FlowSpec, step, IncludeFile, Parameter
 from langchain_ollama import OllamaEmbeddings
 import redis
 import numpy as np
-
+import re
 class embed_flow(FlowSpec):
     # repo_path = Parameter("repo", default="/Users/laypatel/Documents/projects/metaflow")
 
     @step
     def start(self):
-        self.repo_path = "/Users/laypatel/Documents/projects/metaflow/docs"
+        self.repo_path = "/Users/laypatel/Documents/projects/metaflow"
         self.docs = []
         self.next(self.load_doc)
 
@@ -38,11 +38,9 @@ class embed_flow(FlowSpec):
             for f in files:
                 if f.endswith((".md")):
                     with open(os.path.join(path, f), "r", encoding="utf-8") as fh:
-                        self.docs.append({
-                            "repo" : "metaflow",
-                            "path": os.path.join(path, f), 
-                            "content": fh.read()})
-
+                        full_path = os.path.join(path, f)
+                        self.prepare_chunks(fh.read(), full_path)
+ 
 
     @step
     def write_to_redis(self):
@@ -50,16 +48,44 @@ class embed_flow(FlowSpec):
             host= "localhost",
             port = 6379,
             decode_responses = False)
-        print("Entering redis here")
 
         for idx, doc in enumerate(self.docs):
-            key = f"doc:{doc['repo']}.{idx}"
+            key = f"doc:{doc['repo']}:sec:{doc['section_id']}:chunk:{doc['chunk_id']}"
+            # key = f"doc:{doc['repo']}.{idx}"
             r.hset(key, mapping = {
                 "path": doc["path"],
                 "content": doc["content"],
-                "embedding": doc["embedding"]
-            })
+                "embedding": doc["embedding"],
+                "section_id": doc["embedding"],
+                "chunk_id": doc["embedding"]
+                })
         self.next(self.end)
+
+    def prepare_chunks(self, markdown_text, path):
+        sections = self.split_markdown_sections(markdown_text)
+        for i, sec in enumerate(sections):
+            sec_chunks = self.chunk_text(sec)
+            for j, chunk in enumerate(sec_chunks):
+                self.docs.append({
+                    "repo": "metaflow",
+                    "path": path,
+                    "section_id": i,
+                    "chunk_id": j,
+                    "content": chunk
+                })
+
+
+    def split_markdown_sections(self, text: str):
+        sections = re.split(r"\n(?=#)", text)  # split on headers starting with "#"
+        return [s.strip() for s in sections if s.strip()]
+
+    def chunk_text(self, text, chunk_size=500, overlap=50):
+        words = text.split()
+        chunks = []
+        for i in range(0, len(words), chunk_size - overlap):
+            chunk = " ".join(words[i:i+chunk_size])
+            chunks.append(chunk)
+        return chunks
 
     # @step 
     # def index_code(self):
