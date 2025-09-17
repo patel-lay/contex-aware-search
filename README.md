@@ -1,6 +1,7 @@
 # AI knowledge infra 
-Still have errors, and doesn't compile
+Currently Markdown and external data(offical website) is supported. Citation not added to
 
+Working on parsing and adding code
 ### System Diagram
 ```mermaid
 graph LR;

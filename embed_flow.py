@@ -8,6 +8,7 @@ from langchain_ollama import OllamaEmbeddings
 import redis
 import numpy as np
 import re
+from crawler import scrape_metaflow_docs
 class embed_flow(FlowSpec):
     # repo_path = Parameter("repo", default="/Users/laypatel/Documents/projects/metaflow")
 
@@ -20,7 +21,13 @@ class embed_flow(FlowSpec):
     @step
     def load_doc(self):
         self.load_docs(self.repo_path)
+        self.next(self.load_web_doc)
+    
+    @step
+    def load_web_doc(self):
+        self.docs+=scrape_metaflow_docs("https://docs.metaflow.org/", 30)
         self.next(self.embed_doc)
+
 
     @step
     def embed_doc(self):
@@ -56,8 +63,8 @@ class embed_flow(FlowSpec):
                 "path": doc["path"],
                 "content": doc["content"],
                 "embedding": doc["embedding"],
-                "section_id": doc["embedding"],
-                "chunk_id": doc["embedding"]
+                "section_id": doc["section_id"],
+                "chunk_id": doc["chunk_id"]
                 })
         self.next(self.end)
 
@@ -67,7 +74,7 @@ class embed_flow(FlowSpec):
             sec_chunks = self.chunk_text(sec)
             for j, chunk in enumerate(sec_chunks):
                 self.docs.append({
-                    "repo": "metaflow",
+                    "repo": "metaflow/markdown",
                     "path": path,
                     "section_id": i,
                     "chunk_id": j,

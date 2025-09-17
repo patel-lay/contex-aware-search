@@ -14,12 +14,14 @@ def summarize_agent(raw_result):
         for r in raw_result]
 
     docs_text = "\n\n".join([f"[Source: {d.metadata['citation']}] {d.page_content}" for d in docs])
-
+    print(docs_text)
     prompt = f"""
     Summarize the following documentation. 
-    Include citations by referencing the [Source] provided.
+    Always include citations by referencing the [Source] provided in.
 
     {docs_text}
+
+    Do not answer if there is no source.
     """
 
     chain = load_summarize_chain(llm, chain_type="stuff")
