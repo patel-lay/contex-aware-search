@@ -1,5 +1,5 @@
 # AI knowledge infra 
-Currently Markdown and external data(offical website) is supported. Citation not added to
+Currently Markdown and external data(offical website) is supported with citations
 
 Working on parsing and adding code
 ### System Diagram

@@ -32,9 +32,9 @@ def prepare_chunks(docs, markdown_text, path):
         for j, chunk in enumerate(sec_chunks):
             docs.append({
                 "repo": "metaflow/web_doc",
-                "path": path,
-                "section_id": sec["title"],
-                "chunk_id": i,
+                "path": path + "Section:" +  sec["title"],
+                "section_id": i,
+                "chunk_id": j,
                 "content": chunk
             })
 
@@ -50,16 +50,14 @@ def scrape_metaflow_docs(base_url, limit):
 
     while queue and len(visited) < limit:
         url = queue.popleft()
-        # print(url)
+
         if url in visited:
-            # print("Eror")
             continue
         visited.add(url)
 
         try:
             resp = requests.get(url)
             if resp.status_code != 200:
-                # print("rtt")
                 continue
 
             soup = BeautifulSoup(resp.text, "html.parser")
@@ -80,20 +78,11 @@ def scrape_metaflow_docs(base_url, limit):
                         "content": "\n".join(section_content)
                     })
 
-            # # Extract main content (Metaflow docs body)
-            # content = " ".join([p.get_text() for p in soup.find_all("p")])  # Example: only <p> text
 
-            # content_div = soup.find("div", {"class": "td-content"})
             if not sections:
                 continue
-            # print(content)
-            # Convert HTML to markdown for consistency
-            # text = markdownify.markdownify(str(content_div))
+
             prepare_chunks(docs, sections, url)
-            # docs.append({
-            #     "path": url,
-            #     "content": text
-            # })
 
             # Extract links within docs.metaflow.org
             for a in soup.find_all("a", href=True):
@@ -106,12 +95,3 @@ def scrape_metaflow_docs(base_url, limit):
             continue
     # print(docs)
     return docs
-
-# # Run
-# docs_data = scrape_metaflow_docs(limit=10)
-# for d in docs_data[:2]:
-#     print("URL:", d["url"])
-#     print("Content preview:", d["content"][:300], "...\n")
-
-# if __name__ == "__main__":
-#     simple_crawl("https://docs.metaflow.org/")

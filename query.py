@@ -6,22 +6,37 @@ from langchain_ollama import OllamaEmbeddings
 from langchain.docstore.document import Document
 from langchain.chains import load_summarize_chain
 from langchain_community.llms import Ollama
+from collections import defaultdict
 
 llm = Ollama(model="llama3.2")
  
+
+def group_by_source(docs):
+    grouped = defaultdict(list)
+    for doc in docs:
+        grouped[doc.metadata["path"]].append(doc.page_content)
+    
+    merged = []
+    for source, contents in grouped.items():
+        merged.append({
+            "path": source,
+            "content": "\n".join(contents)
+        })
+    return merged
+
 def summarize_agent(raw_result):
-    docs = [Document(page_content=r["content"], metadata={"citation": r["citation"], "score": r["score"]})
+    docs = [Document(page_content=r["content"], metadata={"path": r["path"], "score": r["score"]})
         for r in raw_result]
 
-    docs_text = "\n\n".join([f"[Source: {d.metadata['citation']}] {d.page_content}" for d in docs])
-    print(docs_text)
+    grouped_docs = group_by_source(docs)
     prompt = f"""
-    Summarize the following documentation. 
-    Always include citations by referencing the [Source] provided in.
+        You are an assistant summarizing technical documentation. 
+        Use only the provided text as your source. 
+        For every statement you make, include the citation in the format: [Source: <path>].  
+        If no relevant source is found, respond with: "No relevant information available."    
 
-    {docs_text}
-
-    Do not answer if there is no source.
+        Documentation:
+        {grouped_docs}
     """
 
     chain = load_summarize_chain(llm, chain_type="stuff")
@@ -54,7 +69,7 @@ def query_redis(question: str, top_k: int = 3):
             text = data[b"content"].decode("utf-8")
             score = cosine_similarity(q_emb, emb)
             path = data[b"path"].decode("utf-8")
-            results.append({"content": text, "score": float(score), "citation": path})
+            results.append({"content": text, "score": float(score), "path": path})
     results.sort(key=lambda x: x["score"], reverse=True)
     return summarize_agent(results[:top_k])
 
