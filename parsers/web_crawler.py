@@ -1,11 +1,12 @@
 import requests
 from bs4 import BeautifulSoup
-
+import os
 from urllib.parse import urljoin, urlparse
 from collections import deque
 import markdownify
 from urllib.robotparser import RobotFileParser
 import re
+from parsers.common_parser import prepare_chunks  
 
 
 
@@ -14,31 +15,7 @@ def is_allowed(rp, url, user_agent="*"):
     return rp.can_fetch(user_agent, url)
 
 
-def split_markdown_sections(text: str):
-    sections = re.split(r"\n(?=#)", text)  # split on headers starting with "#"
-    return [s.strip() for s in sections if s.strip()]
-
-def chunk_text(text, chunk_size=500, overlap=50):
-    words = text.split()
-    chunks = []
-    for i in range(0, len(words), chunk_size - overlap):
-        chunk = " ".join(words[i:i+chunk_size])
-        chunks.append(chunk)
-    return chunks
-
-def prepare_chunks(docs, markdown_text, path):
-    for i, sec in enumerate(markdown_text):
-        sec_chunks = chunk_text(sec["content"])
-        for j, chunk in enumerate(sec_chunks):
-            docs.append({
-                "repo": "metaflow/web_doc",
-                "path": path + "Section:" +  sec["title"],
-                "section_id": i,
-                "chunk_id": j,
-                "content": chunk
-            })
-
-def scrape_metaflow_docs(base_url, limit):
+def scrape_web_docs(base_url, limit):
     visited = set()
     queue = deque([base_url])
     ROBOTS_URL = f"{base_url}/robots.txt"
