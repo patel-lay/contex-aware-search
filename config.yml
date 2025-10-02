@@ -1,0 +1,6 @@
+sources:
+  - type: web
+    url: "https://docs.metaflow.org"
+    depth: 30
+  - type: markdown
+    path: "/Users/laypatel/Documents/projects/metaflow"
